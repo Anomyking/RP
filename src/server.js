@@ -21,12 +21,24 @@ dotenv.config();
 // Express + HTTP server for sockets
 const app = express();
 const server = http.createServer(app);
+
+// ✅ CORS setup for your frontend
+const FRONTEND_URL = "https://rp-frontend-00wi.onrender.com";
+
+app.use(cors({
+  origin: [FRONTEND_URL],
+  credentials: true, // optional: needed if using cookies/auth headers
+}));
+
+// Socket.IO with CORS
 export const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: [FRONTEND_URL],
+    methods: ["GET", "POST"],
+  },
 });
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 
 // Connect DB
@@ -64,11 +76,12 @@ app.get("/", (req, res) => {
   res.redirect("/login.html");
 });
 
+// 404 fallback
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, "../frontend/login.html"));
 });
 
-// ✅ Define and use PORT properly
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () =>
   console.log(`🚀 Server running with WebSockets on port ${PORT}`)
