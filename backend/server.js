@@ -71,8 +71,8 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, "../frontend/login.html"));
 });
 
-// ✅ Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server running with WebSockets on port ${PORT}`)
-);
+// ❌ Remove or comment this line
+// server.listen(PORT, () => console.log(`🚀 Server running with WebSockets on port ${PORT}`));
+
+// ✅ Instead, export the app for Vercel
+export default app;
