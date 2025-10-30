@@ -1,6 +1,5 @@
 // backend/controllers/reportController.js
 import Report from "../models/Report.js";
-import User from "../models/User.js";
 import { notifyAdmins, notifyUser } from "../utils/notify.js";
 import { io } from "../server.js";
 

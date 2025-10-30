@@ -8,14 +8,14 @@ import http from "http"; // ✅ Added for socket server
 import { Server } from "socket.io"; // ✅ Socket.IO
 
 // ✅ Imports
-import connectDB from "./src/config/db.js";
-import authRoutes from "./src/routes/authRoutes.js";
-import reportRoutes from "./src/routes/reportRoutes.js";
-import adminRoutes from "./src/routes/adminRoutes.js";
-import userRoutes from "./src/routes/userRoutes.js";
-import notificationRoutes from "./src/routes/notificationRoutes.js";
-import { createInitialAdmin } from "./src/config/initAdmin.js";
-import superAdminRoutes from "./src/routes/superAdminRoutes.js";
+import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import { createInitialAdmin } from "./config/initAdmin.js";
+import superAdminRoutes from "./routes/superAdminRoutes.js";
 
 dotenv.config();
 
@@ -72,7 +72,7 @@ app.use((req, res) => {
 });
 
 // ❌ Remove or comment this line
- server.listen(PORT, () => console.log(`🚀 Server running with WebSockets on port ${PORT}`));
+ app.listen(PORT, () => console.log(`🚀 Server running with WebSockets on port ${PORT}`));
 
 // ✅ Instead, export the app for Vercel
 export default app;
