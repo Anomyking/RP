@@ -1,5 +1,5 @@
-import User from "../models/User.js";
-import Report from "../models/Report.js";
+import User from "../../models/User.js";
+import Report from "../../models/Report.js";
 
 /************************************************************
  * 🔹 Request to Become Admin
