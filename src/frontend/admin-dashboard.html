@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Report Portal</title>
+  <link rel="stylesheet" href="/frontend/styles/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+ 
+</head>
+
+<body>
+  <div id="liveStatus">
+    <div id="liveDot"></div>
+    <span id="liveText">Connecting...</span>
+  </div>
+
+  <!-- ✅ SIDEBAR -->
+  <aside class="sidebar">
+    <h2>🛠️ Admin Panel</h2>
+    <nav>
+      <a href="#overview" class="active">📊 Overview</a>
+      <a href="#reports">📝 Reports</a>
+      <a href="#notifications">🔔 Notifications</a>
+    </nav>
+    <a id="logoutBtn" class="logout" href="#">🚪 Logout</a>
+  </aside>
+
+  <!-- ✅ MAIN CONTENT -->
+  <main class="content">
+
+    <!-- ✅ Bento Overview -->
+    <section id="overview">
+      <h2>📈 Overview</h2>
+      <div class="bento-grid">
+        <div class="bento-card">
+          <h3>Total Revenue</h3>
+          <p class="metric" id="totalRevenue">$0</p>
+          <small>💰 Sum of all approved reports</small>
+        </div>
+
+        <div class="bento-card">
+          <h3>Total Profit</h3>
+          <p class="metric" id="totalProfit">$0</p>
+          <small>📈 Calculated from admin summaries</small>
+        </div>
+
+        <div class="bento-card">
+          <h3>Total Inventory</h3>
+          <p class="metric" id="totalInventory">$0</p>
+          <small>📦 Based on latest admin updates</small>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="bentoTrendChart"></canvas>
+      </div>
+    </section>
+
+    <!-- ✅ Reports -->
+    <section id="reports">
+      <h2>📝 Department Reports</h2>
+      <div id="reportsContainer" class="report-list">
+        <p>Loading reports...</p>
+      </div>
+    </section>
+
+    <!-- ✅ Summary Form -->
+    <section id="summaryUpdateSection" class="summary-form">
+      <h3>📊 Update Report Summary</h3>
+      <form id="summaryForm">
+        <input type="text" id="reportId" placeholder="Enter Report ID to Update" required />
+        <input type="number" id="revenue" placeholder="Revenue ($)" step="0.01" />
+        <input type="number" id="profit" placeholder="Profit ($)" step="0.01" />
+        <input type="number" id="inventoryValue" placeholder="Inventory Value ($)" step="0.01" />
+        <textarea id="notes" placeholder="Notes (optional)" rows="3"></textarea>
+        <button type="submit">💾 Save Summary</button>
+      </form>
+    </section>
+
+    <!-- ✅ Notifications -->
+    <section id="notifications">
+      <h2>🔔 Notifications</h2>
+      <div id="notificationsContainer">
+        <p>Loading notifications...</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "http://localhost:5000/api";
+    const token = localStorage.getItem("token");
+    const socket = io(API_URL.replace("/api", ""), { transports: ["websocket"] });
+
+    const liveDot = document.getElementById("liveDot");
+    const liveText = document.getElementById("liveText");
+
+    socket.on("connect", () => {
+      liveDot.style.background = "limegreen";
+      liveText.textContent = "Live Connected";
+    });
+    socket.on("disconnect", () => {
+      liveDot.style.background = "gray";
+      liveText.textContent = "Disconnected";
+    });
+
+    // throttled updates (3s)
+    let lastUpdate = 0;
+    function throttle(fn) {
+      const now = Date.now();
+      if (now - lastUpdate >= 3000) {
+        lastUpdate = now;
+        fn();
+      }
+    }
+
+    socket.on("reportUpdate", () => throttle(loadReportsAndOverview));
+
+    document.getElementById("summaryForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("reportId").value.trim();
+      const revenue = parseFloat(document.getElementById("revenue").value) || 0;
+      const profit = parseFloat(document.getElementById("profit").value) || 0;
+      const inventoryValue = parseFloat(document.getElementById("inventoryValue").value) || 0;
+      const notes = document.getElementById("notes").value.trim();
+
+      try {
+        const res = await fetch(`${API_URL}/admin/reports/${id}/summary`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ revenue, profit, inventoryValue, notes }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to update summary");
+
+        alert("✅ Summary saved successfully!");
+        e.target.reset();
+        loadReportsAndOverview();
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
+    });
+
+    async function loadReportsAndOverview() {
+      try {
+        const res = await fetch(`${API_URL}/reports`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const { data } = await res.json();
+
+        if (!Array.isArray(data)) return;
+
+        const approved = data.filter(r => r.status === "Approved" && r.adminSummary);
+        const totalRevenue = approved.reduce((sum, r) => sum + (r.adminSummary.revenue || 0), 0);
+        const totalProfit = approved.reduce((sum, r) => sum + (r.adminSummary.profit || 0), 0);
+        const totalInventory = approved.reduce((sum, r) => sum + (r.adminSummary.inventoryValue || 0), 0);
+
+        document.getElementById("totalRevenue").textContent = "$" + totalRevenue.toLocaleString();
+        document.getElementById("totalProfit").textContent = "$" + totalProfit.toLocaleString();
+        document.getElementById("totalInventory").textContent = "$" + totalInventory.toLocaleString();
+
+        renderBentoChart(approved);
+      } catch (err) {
+        console.error("Overview error:", err);
+      }
+    }
+
+    let chart;
+    function renderBentoChart(reports) {
+      const ctx = document.getElementById("bentoTrendChart");
+      if (!ctx) return;
+
+      const labels = reports.map(r => new Date(r.reviewedAt).toLocaleDateString());
+      const revenue = reports.map(r => r.adminSummary?.revenue || 0);
+      const profit = reports.map(r => r.adminSummary?.profit || 0);
+      const inventory = reports.map(r => r.adminSummary?.inventoryValue || 0);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { label: "Revenue", data: revenue, borderColor: "#FF0B55", fill: false },
+            { label: "Profit", data: profit, borderColor: "#CF0F47", fill: false },
+            { label: "Inventory", data: inventory, borderColor: "#FF7B9E", fill: false },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "top" } },
+          scales: { y: { beginAtZero: true } },
+        },
+      });
+    }
+
+    // initial load
+    loadReportsAndOverview();
+  </script>
+</body>
+</html>
