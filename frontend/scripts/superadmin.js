@@ -1,7 +1,7 @@
 /************************************************************
  * CONFIG
  ************************************************************/
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://rp-frontend.onrender.com";
 const token = localStorage.getItem("token");
 if (!token) {
   window.location.href = "/login.html";

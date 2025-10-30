@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://rp-frontend.onrender.com";
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
 const adminName = localStorage.getItem("name");

@@ -108,7 +108,7 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save();
 
-    const resetURL = `http://localhost:5000/reset-password.html?token=${resetToken}`;
+    const resetURL = `https://rp-frontend.onrender.com/reset-password.html?token=${resetToken}`;
     console.log(`📧 Password reset link for ${email}: ${resetURL}`);
 
     res.json({
