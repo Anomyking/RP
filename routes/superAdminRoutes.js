@@ -6,9 +6,9 @@ import {
   getPendingAdminRequests,
   handleAdminRequest,
   sendNotification,
-} from "../controllers/adminController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
-import { superAdminOnly } from "../middleware/roleMiddleware.js";
+} from "../../controllers/adminController.js";
+import { authMiddleware } from "../../middleware/authMiddleware.js";
+import { superAdminOnly } from "../../middleware/roleMiddleware.js";
 
 const router = express.Router();
 

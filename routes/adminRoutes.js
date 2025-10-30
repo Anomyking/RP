@@ -1,8 +1,8 @@
 // backend/routes/adminRoutes.js
 import express from "express";
-import { authMiddleware } from "../middleware/authMiddleware.js";
-import { adminOrSuperAdmin, superAdminOnly } from "../middleware/roleMiddleware.js";
-import { updateAdminSummary } from "../controllers/reportController.js";
+import { authMiddleware } from "../../middleware/authMiddleware.js";
+import { adminOrSuperAdmin, superAdminOnly } from "../../middleware/roleMiddleware.js";
+import { updateAdminSummary } from "../../controllers/reportController.js";
 
 const router = express.Router();
 

@@ -1,13 +1,13 @@
 // backend/routes/reportRoutes.js
 import express from "express";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { authMiddleware } from "../../middleware/authMiddleware.js";
 import {
   createReport,
   getReports,
   updateStatus,
   getReportsByCategory,
   updateAdminSummary,
-} from "../controllers/reportController.js";
+} from "../../controllers/reportController.js";
 
 
 const router = express.Router();
