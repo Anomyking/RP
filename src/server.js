@@ -72,7 +72,7 @@ app.use((req, res) => {
 });
 
 // ❌ Remove or comment this line
- app.listen(PORT, () => console.log(`🚀 Server running with WebSockets on port ${PORT}`));
+ server.listen(PORT, () => console.log(`🚀 Server running with WebSockets on port ${PORT}`));
 
 // ✅ Instead, export the app for Vercel
 export default app;
