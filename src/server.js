@@ -22,19 +22,25 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// ✅ CORS setup for your frontend
+// ✅ Enhanced CORS setup
 const FRONTEND_URL = "https://rp-frontend-00wi.onrender.com";
 
 app.use(cors({
-  origin: [FRONTEND_URL],
-  credentials: true, // optional: needed if using cookies/auth headers
+  origin: [FRONTEND_URL, "http://localhost:3000"], // Add localhost for development
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
+
+// Handle preflight requests explicitly
+app.options("*", cors());
 
 // Socket.IO with CORS
 export const io = new Server(server, {
   cors: {
-    origin: [FRONTEND_URL],
+    origin: [FRONTEND_URL, "http://localhost:3000"],
     methods: ["GET", "POST"],
+    credentials: true
   },
 });
 
@@ -67,9 +73,20 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 
-// Serve frontend
+// ✅ Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ 
+    status: "OK", 
+    message: "Server is running",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Serve frontend (if you're serving static files)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Only serve static files if they exist
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 app.get("/", (req, res) => {
@@ -78,7 +95,13 @@ app.get("/", (req, res) => {
 
 // 404 fallback
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "../frontend/login.html"));
+  res.status(404).json({ error: "Route not found" });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 // Start server
