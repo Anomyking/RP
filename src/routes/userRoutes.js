@@ -1,16 +1,16 @@
 // backend/routes/userRoutes.js
 import express from "express";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { authMiddleware } from "../../middleware/authMiddleware.js";
 import {
   requestAdminAccess,
   getNotifications,
   markNotificationAsRead,
-} from "../controllers/userController.js";
+} from "../../controllers/userController.js";
 import {
   createReport,
   getReports,
   getReportsByCategory,
-} from "../controllers/reportController.js";
+} from "../../controllers/reportController.js";
 
 const router = express.Router();
 

@@ -9,13 +9,13 @@ import { Server } from "socket.io"; // ✅ Socket.IO
 
 // ✅ Imports
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js";
-import reportRoutes from "./routes/reportRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import notificationRoutes from "./routes/notificationRoutes.js";
+import authRoutes from "./src/routes/authRoutes.js";
+import reportRoutes from "./src/routes/reportRoutes.js";
+import adminRoutes from "./src/routes/adminRoutes.js";
+import userRoutes from "./src/routes/userRoutes.js";
+import notificationRoutes from "./src/routes/notificationRoutes.js";
 import { createInitialAdmin } from "./config/initAdmin.js";
-import superAdminRoutes from "./routes/superAdminRoutes.js";
+import superAdminRoutes from "./src/routes/superAdminRoutes.js";
 
 dotenv.config();
 
