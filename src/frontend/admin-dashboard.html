@@ -7,11 +7,13 @@
   <link rel="stylesheet" href="/src/frontend/styles/dashboard.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
+  <script src="/src/frontend/scripts/admin.js"></script>
+  <script src="/src/frontend/scripts/script.js"></script>
  
 </head>
 
 <body>
+
   <div id="liveStatus">
     <div id="liveDot"></div>
     <span id="liveText">Connecting...</span>
@@ -89,120 +91,5 @@
     </section>
   </main>
 
-  <script>
-    const API_URL = "https://rp-frontend.onrender.com";
-    const token = localStorage.getItem("token");
-    const socket = io(API_URL.replace("/api", ""), { transports: ["websocket"] });
-
-    const liveDot = document.getElementById("liveDot");
-    const liveText = document.getElementById("liveText");
-
-    socket.on("connect", () => {
-      liveDot.style.background = "limegreen";
-      liveText.textContent = "Live Connected";
-    });
-    socket.on("disconnect", () => {
-      liveDot.style.background = "gray";
-      liveText.textContent = "Disconnected";
-    });
-
-    // throttled updates (3s)
-    let lastUpdate = 0;
-    function throttle(fn) {
-      const now = Date.now();
-      if (now - lastUpdate >= 3000) {
-        lastUpdate = now;
-        fn();
-      }
-    }
-
-    socket.on("reportUpdate", () => throttle(loadReportsAndOverview));
-
-    document.getElementById("summaryForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const id = document.getElementById("reportId").value.trim();
-      const revenue = parseFloat(document.getElementById("revenue").value) || 0;
-      const profit = parseFloat(document.getElementById("profit").value) || 0;
-      const inventoryValue = parseFloat(document.getElementById("inventoryValue").value) || 0;
-      const notes = document.getElementById("notes").value.trim();
-
-      try {
-        const res = await fetch(`${API_URL}/admin/reports/${id}/summary`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ revenue, profit, inventoryValue, notes }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to update summary");
-
-        alert("✅ Summary saved successfully!");
-        e.target.reset();
-        loadReportsAndOverview();
-      } catch (err) {
-        alert("❌ " + err.message);
-      }
-    });
-
-    async function loadReportsAndOverview() {
-      try {
-        const res = await fetch(`${API_URL}/reports`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const { data } = await res.json();
-
-        if (!Array.isArray(data)) return;
-
-        const approved = data.filter(r => r.status === "Approved" && r.adminSummary);
-        const totalRevenue = approved.reduce((sum, r) => sum + (r.adminSummary.revenue || 0), 0);
-        const totalProfit = approved.reduce((sum, r) => sum + (r.adminSummary.profit || 0), 0);
-        const totalInventory = approved.reduce((sum, r) => sum + (r.adminSummary.inventoryValue || 0), 0);
-
-        document.getElementById("totalRevenue").textContent = "$" + totalRevenue.toLocaleString();
-        document.getElementById("totalProfit").textContent = "$" + totalProfit.toLocaleString();
-        document.getElementById("totalInventory").textContent = "$" + totalInventory.toLocaleString();
-
-        renderBentoChart(approved);
-      } catch (err) {
-        console.error("Overview error:", err);
-      }
-    }
-
-    let chart;
-    function renderBentoChart(reports) {
-      const ctx = document.getElementById("bentoTrendChart");
-      if (!ctx) return;
-
-      const labels = reports.map(r => new Date(r.reviewedAt).toLocaleDateString());
-      const revenue = reports.map(r => r.adminSummary?.revenue || 0);
-      const profit = reports.map(r => r.adminSummary?.profit || 0);
-      const inventory = reports.map(r => r.adminSummary?.inventoryValue || 0);
-
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            { label: "Revenue", data: revenue, borderColor: "#FF0B55", fill: false },
-            { label: "Profit", data: profit, borderColor: "#CF0F47", fill: false },
-            { label: "Inventory", data: inventory, borderColor: "#FF7B9E", fill: false },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: "top" } },
-          scales: { y: { beginAtZero: true } },
-        },
-      });
-    }
-
-    // initial load
-    loadReportsAndOverview();
-  </script>
 </body>
 </html>

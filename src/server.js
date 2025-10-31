@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import { Server } from "socket.io";
 
-// Imports
+// 🧩 Local Imports
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
@@ -16,38 +16,40 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import { createInitialAdmin } from "./config/initAdmin.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 
+// 🌍 Load environment variables
 dotenv.config();
 
-// Express + HTTP server for sockets
+// ⚙️ Initialize Express + HTTP server
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Enhanced CORS setup
+// 🌐 CORS Configuration (allow both local + deployed frontend)
 const FRONTEND_URL = "https://rp-frontend-00wi.onrender.com";
 
 app.use(cors({
-  origin: [FRONTEND_URL, "http://localhost:3000"], // Add localhost for development
+  origin: "*",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Handle preflight requests explicitly
-app.options("*", cors());
-
-// Socket.IO with CORS
+// 🧠 Initialize Socket.IO
 export const io = new Server(server, {
   cors: {
-    origin: [FRONTEND_URL, "http://localhost:3000"],
+    origin: [
+      FRONTEND_URL,
+      "http://localhost:5500",
+      "http://127.0.0.1:5500",
+    ],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
 });
 
-// Middleware
+// 🧱 Middleware
 app.use(express.json());
 
-// Connect DB
+// 🧩 Connect to MongoDB
 connectDB()
   .then(async () => {
     console.log("✅ MongoDB connected successfully");
@@ -55,7 +57,7 @@ connectDB()
   })
   .catch((err) => console.error("❌ DB connection error:", err.message));
 
-// Socket connections
+// ⚡ Socket.IO Events
 io.on("connection", (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
   socket.emit("connectionStatus", { connected: true });
@@ -65,7 +67,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Routes
+// ✅ API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/admin", adminRoutes);
@@ -75,37 +77,45 @@ app.use("/api/superadmin", superAdminRoutes);
 
 // ✅ Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ 
-    status: "OK", 
+  res.status(200).json({
+    status: "OK",
     message: "Server is running",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Serve frontend (if you're serving static files)
+// 🗂️ Serve static frontend (optional for Render)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Only serve static files if they exist
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(path.join(__dirname, "frontend")));
 
 app.get("/", (req, res) => {
   res.redirect("/login.html");
 });
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; connect-src 'self' http://127.0.0.1:5500 ws://127.0.0.1:5500;"
+  );
+  next();
+});
 
-// 404 fallback
+
+// ✅ Fallback route (404)
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err);
-  res.status(500).json({ error: "Internal server error" });
-});
-
-// Start server
+// 🚀 Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server running with WebSockets on port ${PORT}`)
-);
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(` Port ${PORT} is busy, trying ${PORT + 1}...`);
+    server.listen(PORT + 1);
+  } else {
+    console.error('❌ Server error:', err);
+  }
+});

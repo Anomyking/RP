@@ -1,7 +1,14 @@
 /************************************************************
  * GLOBAL CONSTANTS
  ************************************************************/
-const API_URL = "https://rp-frontend.onrender.com";
+const LOCAL_API = "http://localhost:5000/api"; // Local development
+const PROD_API = "https://rp-z9sk.onrender.com/api"; // Your Render backend
+
+// Detect environment automatically
+const API_URL = window.location.hostname.includes("localhost")
+  ? LOCAL_API
+  : PROD_API;
+
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
 
@@ -140,7 +147,6 @@ if (reportForm) {
     }
   });
 
-  // Initial load
   refreshReports();
 
   // 🔁 Auto refresh every 30 seconds (avoid duplicates)
@@ -170,16 +176,16 @@ async function loadReports() {
     });
 
     if (!res.ok) throw new Error(`Failed to fetch reports (${res.status})`);
-    const reports = await res.json();
+    const { data } = await res.json(); // ✅ Adjusted to use proper response shape
 
-    if (!Array.isArray(reports)) throw new Error("Invalid response from server");
+    if (!Array.isArray(data)) throw new Error("Invalid response from server");
 
-    if (reports.length === 0) {
+    if (data.length === 0) {
       reportsDiv.innerHTML = "<p>No reports submitted yet.</p>";
       return;
     }
 
-    reportsDiv.innerHTML = reports
+    reportsDiv.innerHTML = data
       .map(
         (r) => `
         <div class="report-card">
@@ -246,10 +252,10 @@ async function loadReportAnalytics() {
     });
 
     if (!res.ok) throw new Error(`Server responded ${res.status}`);
-    const reports = await res.json();
-    if (!Array.isArray(reports)) throw new Error("Invalid report data.");
+    const { data } = await res.json();
+    if (!Array.isArray(data)) throw new Error("Invalid report data.");
 
-    let filtered = reports;
+    let filtered = data;
     if (category) filtered = filtered.filter((r) => r.category === category);
     if (status) filtered = filtered.filter((r) => r.status === status);
 
@@ -336,3 +342,4 @@ function renderAnalyticsChart(reports) {
     },
   });
 }
+
